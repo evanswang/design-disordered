@@ -103,6 +103,18 @@ def cal_packing_fraction(sigmas, N, nspecies, box_size, dimension):
 
   sphere_volume_total = jnp.sum(vmap(sphere_volume, in_axes=(0, 0))(jnp.array(sigmas), jnp.array(Ns)))
   return sphere_volume_total / (box_size ** dimension)
+  
+def box_at_packing_fraction(sigmas, Ns, phi, dimension):
+  sphere_volume_2d = lambda s, n: (jnp.pi / f32(4)) * n * s**2
+  sphere_volume_3d = lambda s, n: (jnp.pi / f32(6)) * n * s**3
+  if dimension == 2:
+    sphere_volume = sphere_volume_2d
+  elif dimension == 3:
+    sphere_volume = sphere_volume_3d
+  
+  sphere_volume_total = jnp.sum(vmap(sphere_volume, in_axes=(0,0))(jnp.array(sigmas), jnp.array(Ns)))
+  return (sphere_volume_total / phi) ** (1/dimension)
+
 
 @jit
 def _vector2dsymmat(v, zeros):
