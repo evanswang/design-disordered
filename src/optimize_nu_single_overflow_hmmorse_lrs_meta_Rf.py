@@ -24,6 +24,8 @@ from minimization import run_minimization_while_nl_overflow_fn
 
 from optimizer_ind import optimize_Rf_meta_fn
 
+from utils import vector2dsymmat, diameters_to_sigma_matrix
+
 import os
 
 import functools
@@ -34,46 +36,6 @@ f64 = jnp.float64
 Array = util.Array
 maybe_downcast = util.maybe_downcast
 DisplacementOrMetricFn = space.DisplacementOrMetricFn
-
-def box_at_packing_fraction(sigmas, Ns, phi, dimension):
-  sphere_volume_2d = lambda s, n: (jnp.pi / f32(4)) * n * s**2
-  sphere_volume_3d = lambda s, n: (jnp.pi / f32(6)) * n * s**3
-  if dimension == 2:
-    sphere_volume = sphere_volume_2d
-  elif dimension == 3:
-    sphere_volume = sphere_volume_3d
-  
-  sphere_volume_total = jnp.sum(vmap(sphere_volume, in_axes=(0,0))(jnp.array(sigmas), jnp.array(Ns)))
-  return (sphere_volume_total / phi) ** (1/dimension)
-
-@jit
-def _vector2dsymmat(v, zeros):
-  n = zeros.shape[0]
-  assert v.shape == (
-    n * (n + 1) / 2,
-  ), f"The input must have shape jnp.int16(((1 + 8 * v.shape[0]) ** 0.5 - 1) / 2) = {(n * (n + 1) / 2,)}, got {v.shape} instead."
-  ind = jnp.triu_indices(n)
-  return zeros.at[ind].set(v).at[(ind[1], ind[0])].set(v)
-
-@jit
-def vector2dsymmat(v):
-  """ Convert a vector into a symmetric matrix.
-  Args:
-    v: vector of length (n*(n+1)/2,)
-  Return:
-    symmetric matrix m of shape (n,n) that satisfies
-    m[jnp.triu_indices_from(m)] == v
-  Example:
-    v = jnp.array([0,1,2,3,4,5])
-    returns: [[ 0, 1, 2],
-              1, 3, 4],
-              2, 4, 5]]
-  """
-  n = int(((1 + 8 * v.shape[0]) ** 0.5 - 1) / 2)
-  return _vector2dsymmat(v, jnp.zeros((n, n), dtype=v.dtype))
-
-def diameters_to_sigma_matrix(diameters):
-  return vmap(vmap(lambda d1,d2: (d1 + d2) * 0.5, in_axes=(None, 0)), in_axes=(0, None))(diameters, diameters)
 
 def check_c(C):
   C_dict = elasticity.extract_elements(C)
@@ -87,14 +49,6 @@ def check_c(C):
   eigens = jnp.linalg.eigvalsh(C_matrix)
   positive_C = jnp.all(jnp.linalg.eigvals(C_matrix)>0)
   return positive_C
-
-def set_cutoff(alpha):
-    def func_to_solve(x, Etol=1e-6, **kwargs):
-        return jnp.exp(-2. * alpha * x) - 2. * jnp.exp(-alpha * x) + Etol
-
-    func = jit(func_to_solve)
-    root = fsolve(func, 1.0)[0]
-    return root
 
 def harmonic_morse(dr: Array,
         epsilon: Array=5.0,
@@ -133,8 +87,6 @@ def harmonic_morse_cutoff(dr,
         (epsilon * (jnp.exp(-2. * a_dr) - 2. * jnp.exp(-a_dr)))*smooth_fn(dr))
 
   return jnp.nan_to_num(U)
-
-
 
 
 def setup(params,
@@ -226,7 +178,6 @@ def setup(params,
    con_min = jnp.where(minimize_info[1] <= Ftol, True, False)
 
    f_energy_fn_nl = energy_hm_fn_nl(params_dict)
-#   f_nbrs = nbrs.update(R_final)
    nbrs = minimize_info[0]
    emt_fn = elasticity.athermal_moduli(f_energy_fn_nl, check_convergence=True)
 
@@ -287,11 +238,6 @@ key = random.PRNGKey(key_seed)
 dimension = dimension
 num_B = int((n_species + 1) * n_species * 0.5)
 
-# path=("/Users/mzu/Documents/Work/self-assembly of disorder/jax_md_mp/data/Data_bea81/optimization/individual/"
-#       "alpha5.0_density1.6/loss_hm_Rf_meta_individual1"
-#       +"_a"+str(alpha_init)+"_density"+str(density)+"_dmin"+str(dmin)+"_N"+str(N)+"_nsp"+str(n_species)+
-#       "_nu"+str(nu_target)+"_ltol"+str(ltol)+"_np"+str(np)
-#       )
 path=("/Users/mzu/PycharmProjects/jaxmetal/data/disordered_solids/hmmorse_a5.0/"
       "loss_hm_Rf_meta_individual1_a"+str(alpha_init)
       +"_density"+str(density)+"_dmin"+str(dmin)+"_N"+str(N)+"_nsp"+str(n_species)+
@@ -308,20 +254,15 @@ if os.path.isfile(inputfile):
         step_start = sp[0]
         start_learning_rate=f64(sp[1])
         loss_tmp = f64(sp[2])
-#       if loss_tmp < ltol:
-#           exit()
 ### read params in need            
         diameters_seed = jnp.array([sp[s] for s in range(4, int(4+n_species))], dtype=f64)
         B_seed = jnp.array([sp[s] for s in range(int(4+n_species), int(4+n_species+num_B))], dtype=f64)
-#        alpha_seed = jnp.array([sp[s] for s in range(4, int(4+num_B))], dtype=f64)
 else:
     step_start = 0
     D_seed = jnp.array([dmin, 1.0], dtype=f64)
     diameters_seed = jnp.repeat(D_seed, int(n_species/2))
     B_seed = jnp.ones(num_B, dtype=f64) * B_init
-#    alpha_seed = jnp.ones(num_B, dtype=f64) * alpha_init
 param_dict = {"diameters_seed":diameters_seed, "B_seed":B_seed}
-#param_dict = {"alpha_seed":alpha_seed}
 
 boxfile=str(path)+"_lrs.box"
 if os.path.isfile(boxfile):
@@ -330,17 +271,6 @@ if os.path.isfile(boxfile):
         box_size = f64(box_size)
 else:
     box_size = None
-
-#### alpha in param_dict
-#   D_seed = jnp.array([dmin, 1.0], dtype=f64)
-#   diameters_seed = jnp.repeat(D_seed, int(n_species/2))
-#   sigma = diameters_to_sigma_matrix(diameters_seed)
-#   run, box_size = setup(param_dict, 
-#           N, dimension, 
-#           box_size=box_size, density=density, 
-#           B=B_init,
-#           sigma=sigma,
-#           nspecies=n_species) 
 
 run, box_size = setup(param_dict, 
         N, dimension, 
@@ -390,10 +320,9 @@ params, Rfinal = optimize_Rf_meta_fn(run, Rinit, param_dict, inputfile, logfile,
         nothreshold=nothreshold)
 
 with open(confile, 'w') as f:
-    print('{:6d}\t{:.60g}'.format(N, box_size), file=f)
-    print('\t'.join("%.60g" % d for d in params["diameters_seed"]), file=f)
-    print('\t'.join("%.60g" % b for b in params["B_seed"]), file=f)
-#    print('\t'.join("%.16f" % a for a in params["alpha_seed"]), file=f)
+    print('{:6d}\t{:.16f}'.format(N, box_size), file=f)
+    print('\t'.join("%.16f" % d for d in params["diameters_seed"]), file=f)
+    print('\t'.join("%.16f" % b for b in params["B_seed"]), file=f)
     if dimension == 2:
         for i, r in enumerate(Rfinal):
             print('{:.16f}\t{:.16f}'.format(r[0], r[1]), file=f)
