@@ -1,5 +1,5 @@
 # design-disordered
-Design disordered solids
+Designing athermal disordered solids with automatic differentiation
 
 All programmes use JAX package. This project starts with Carl Goodrich (ISTA).
 
