@@ -45,8 +45,9 @@ Package | Version (>=)
 The training programms run on single CPU for individual system and multiple CPUs for ensembles, see details in [Individual](#Individual) and [Ensemble](#Ensemble) for more information.
 
 ## Model and Method
-In our work, particles interact via a "harmonic-Morse" potential given by 
-<img width="373" height="197" src="resources/hmMorse.png">
+In our work, particles interact via a "harmonic-Morse" potential given by <br>
+<img width="373" height="97" src="resources/hmMorse.png">
+<br> where $\sigma$ is the mean of diameters of two particles, $B$ determines the strength of the attractions, and $k$ is the spring constant. We consider particle diameters $\sigma$ and binding energy $B_{ij}$ as design parameters.
 
 ## Individual
 The initial energy minimized state is generated 
