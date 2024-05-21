@@ -20,10 +20,7 @@ $~$
 # Introduction & Setup
 We introduce a framework to control the properties of athermal disordered solids via automatic differetiation to directly connect desired properties with parameters, as described in [Designing athermal disordered solids with automatic differentiation] (https://arxiv.org/abs/2404.15101)
 
-To conduct similar studies as those presented in the publication, start by cloning this reposity via
-```
-git clone 
-```
+<p align="center"><img src="resources/algorithm.png" alt="structure" align="center" width="600px"></p>
 
 # Dependencies
 
@@ -48,6 +45,9 @@ Readers can define their own interacting potential and design parameters. Note t
 
 ## Individual
 You can train an individual system by using the "scripts/run_individual.sh" script. The scipt generates a random initial energy minimized state with initial parameters, applies optimization, and saves the evolution of objective and parameters and the optimized configuration.
+
+## Ensemble
+To reproduce the optimization process for ensemble averaged properties in the main text, you can run the demo "scripts/run_ensemble.sh". Note that, we use "pmap" to parallel compute the property over 8 samples, 
 
 
 # Citation
