@@ -35,19 +35,21 @@ Package | Version (>=)
 The training programms run on single CPU for individual system and multiple CPUs for ensembles, see details in [Individual](#Individual) and [Ensemble](#Ensemble) for more information.
 
 # Model
-In our work, particles interact via a "harmonic-Morse" potential given by <br>
-<img width="373" height="107" src="resources/hmMorse.png">
-<br> where $\sigma$ is the mean of diameters of two particles, $B$ determines the strength of the attractions, and $k$ is the spring constant. We consider particle diameters $\sigma$ and binding energy $B_{ij}$ as design parameters. 
+In our work, particles interact via a "harmonic-Morse" potential given by 
+
+<p align="left"><img src="resources/hmMorse.png" alt="structure" align="center" width="300px"></p>
+
+where $\sigma$ is the mean of diameters of two particles, $B$ determines the strength of the attractions, and $k$ is the spring constant. We consider particle diameters $\sigma$ and binding energy $B_{ij}$ as design parameters. 
 
 Readers can define their own interacting potential and design parameters. Note that, the design parameter should be a continuous variable because automatic differentiation can only estimate the gradient of a float variable.
 
 # Training
 
 ## Individual
-You can train an individual system by using the "scripts/run_individual.sh" script. The scipt generates a random initial energy minimized state with initial parameters, applies optimization, and saves the evolution of objective and parameters and the optimized configuration.
+You can train an individual system by using the `scripts/run_individual.sh` script. The scipt generates a random initial energy minimized state with initial parameters, applies optimization, and saves the evolution of objective and parameters and the optimized configuration.
 
 ## Ensemble
-To reproduce the optimization process for ensemble averaged properties in the main text, you can run the demo "scripts/run_ensemble.sh". Note that, we use "pmap" to parallellize the computation of the property over 8 samples, 
+To reproduce the optimization process for ensemble averaged properties in the main text, you can run the demo `scripts/run_ensemble.sh`. Note that, we use `pmap` to parallellize the computation of the property over 8 samples, 
 
 # Code
 * `src`: source codes
