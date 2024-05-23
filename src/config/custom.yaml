@@ -1,0 +1,23 @@
+path:
+  input_path: "/Users/mzu/PycharmProjects/jaxmetal/src/disordered_solids/github/Data/optimize_individual_nu0.5.dat"
+  output_path: "/Users/mzu/PycharmProjects/jaxmetal/src/disordered_solids/github/Data/optimize_individual_nu0.5.dat"
+  config_path: "/Users/mzu/PycharmProjects/jaxmetal/src/disordered_solids/github/Data/optimize_individual_nu0.5.con"
+
+property:
+  target: 0.5
+
+model:
+  key: 11
+
+neighbor:
+  dr_threshold: 0.3
+
+minimize:
+  dt_max: 0.4
+
+optimize:
+  ltol: 1.e-9
+
+design:
+  diameters_seed: [0.8, 1.0]
+  B_seed: [0.1, 0.1, 0.1]

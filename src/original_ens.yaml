@@ -1,0 +1,42 @@
+path:
+  input_path: "/Users/mzu/PycharmProjects/jaxmetal/src/disordered_solids/github/Data/optimize_ensemble_minibatch2_nu0.35.dat"
+  output_path: "/Users/mzu/PycharmProjects/jaxmetal/src/disordered_solids/github/Data/optimize_ensemble_minibatch2_nu0.35.dat"
+  config_path: "/Users/mzu/PycharmProjects/jaxmetal/src/disordered_solids/github/Data/optimize_ensemble_minibatch2_nu0.35.con"
+
+property:
+  name: "nu"
+  q: 8
+  target: 0.35
+
+model:
+  key: 120
+  N: 368
+  nspecies: 2
+  dimension: 2
+  density: 1.6
+  box_size: 
+  alpha: 6.0
+  k: 5.0
+  sigma: 1.0
+  B: 0.1
+
+neighbor:
+  dr_threshold: 0.5
+  capacity: 1.15
+
+minimize:
+  dt_start: 0.001
+  dt_max: 0.1
+  Ftol: 1.e-12
+  num_steps: 1000000
+  min_style: 2
+
+optimize:
+  optimizer: "RMSPROP"
+  opt_steps: 10
+  lr_type: "cosine"
+  lr: 1.e-3
+  afactor: 0.1
+  ltol: 1.e-6
+  ndev: 2
+  mini_batch: 2

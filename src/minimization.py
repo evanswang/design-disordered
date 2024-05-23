@@ -1,11 +1,4 @@
 #@title running energy minimization
-###################################
-# @name : minimization.py
-# @author : mzu
-# @created date : 07/01/22
-# @function : subfile including modified FIRE and program of minimization
-# @ref: https://git.ist.ac.at/goodrichgroup/common_utils/-/blob/team/common_utils/minimization.py
-###################################
 """
 Defines a modified FIRE minimization.
 
@@ -18,7 +11,7 @@ simulations and its implementation in lammps". Computational Materials Science V
 
 import jax.numpy as jnp
 from jax.config import config
-config.update('jax_enable_x64', True)  # use double-precision numbers
+config.update('jax_enable_x64', True)
 
 from jax import jit, lax
 
@@ -28,50 +21,6 @@ from jax_md import dataclasses
 f32 = jnp.float32
 f64 = jnp.float64
 Array = util.Array
-
-
-def run_minimization_while_neighbor_list(energy_fn, neighbor_fn, R_init, shift,
-                                         max_grad_thresh=1e-12, max_num_steps=1000000,
-                                         step_inc=1000, verbose=False, **kwargs):
-    nbrs = neighbor_fn.allocate(R_init)
-
-    init, apply = minimize.fire_descent(jit(energy_fn), shift, **kwargs)
-    apply = jit(apply)
-
-    @jit
-    def get_maxgrad(state):
-        return jnp.amax(jnp.abs(state.force))
-
-    @jit
-    def body_fn(state_nbrs, t):
-        state, nbrs = state_nbrs
-        nbrs = neighbor_fn.update(state.position, nbrs)
-        state = apply(state, neighbor=nbrs)
-        return (state, nbrs), 0
-
-    state = init(R_init, neighbor=nbrs)
-
-    step = 0
-    while step < max_num_steps:
-        if verbose:
-            print('minimization step {}'.format(step))
-        rtn_state, _ = lax.scan(body_fn, (state, nbrs), step + jnp.arange(step_inc))
-        new_state, nbrs = rtn_state
-        # If the neighbor list overflowed, rebuild it and repeat part of
-        # the simulation.
-        if nbrs.did_buffer_overflow:
-            print('Buffer overflow.')
-            nbrs = neighbor_fn.allocate(state.position)
-        else:
-            state = new_state
-            step += step_inc
-            if get_maxgrad(state) <= max_grad_thresh:
-                break
-
-    if verbose:
-        print('successfully finished {} steps.'.format(step * step_inc))
-
-    return state.position, get_maxgrad(state), nbrs, step
 
 def run_minimization_while(energy_fn, R_init, shift, min_style,
                            max_grad_thresh=1e-12, max_num_steps=10000000,
@@ -102,78 +51,8 @@ def run_minimization_while(energy_fn, R_init, shift, min_style,
 
   return state.position, get_maxgrad(state), num_iterations
 
-# This version is fully differentiable and internally jitted
-def run_minimization_scan(energy_fn, R_init, shift, min_style, num_steps=5000, **kwargs):
-    if min_style == 1:
-        init, apply = minimize.fire_descent(jit(energy_fn), shift, **kwargs)
-    else:
-        init, apply = modif_fire(jit(energy_fn), shift, **kwargs)
-
-    apply = jit(apply)
-
-    @jit
-    def scan_fn(state, i):
-        return apply(state), 0.0
-
-    state = init(R_init)
-    state, _ = lax.scan(scan_fn, state, jnp.arange(num_steps))
-
-    return state.position, jnp.amax(jnp.abs(energy_fn(state.position)))
-
-def run_minimization_scan_nl_fn(neigh_fn, force_fn, R_init, shift, min_style,
-                              forced_rebuilding=True,
-                              max_grad_thresh=1e-12, max_num_steps=10000000,
-                              scan_steps=100,
-                              **kwargs):
-  if min_style == 1:
-      init, apply = minimize.fire_descent(jit(force_fn), shift, **kwargs)
-  else:
-      init, apply = modif_fire(jit(force_fn), shift, **kwargs)
-
-  apply = jit(apply)
-
-  nbrs = neigh_fn.allocate(R_init)
-  state = init(R_init, neighbor=nbrs)
-
-  @jit
-  def get_maxgrad(state):
-     return jnp.amax(jnp.abs(state.force))
-
-  @jit
-  def cond_fn(state, i):
-     return jnp.logical_and(get_maxgrad(state) > max_grad_thresh, i < max_num_steps)
-
-  @jit
-  def update_nbrs(R, nbrs):
-    return neigh_fn.update(R, nbrs)
-
-  @jit
-  def scan_fn(val, i):
-    state, nbrs = val
-    nbrs = update_nbrs(state.position, nbrs)
-    return (apply(state, neighbor=nbrs), nbrs), 0.0
-
-  @jit
-  def update_fn(state, nbrs):
-    scan_val, _ = lax.scan(scan_fn, (state,nbrs), jnp.arange(scan_steps))
-    state, nbrs = scan_val
-    return state, nbrs
-
-  steps = 0
-  while cond_fn(state, steps):
-    new_state, nbrs = update_fn(state, nbrs)
-    if nbrs.did_buffer_overflow:
-      print("Rebuilding neighbor_list.")
-      nbrs = neigh_fn.allocate(state.position)
-    else:
-      state = new_state
-      steps += scan_steps
-  
-  num_iterations = steps
-  return state.position, jnp.amax(jnp.abs(state.force)), nbrs, num_iterations
 
 def run_minimization_while_nl_fn(neigh_fn, force_fn, R_init, shift, min_style,
-                              forced_rebuilding=True,
                               max_grad_thresh=1e-12, max_num_steps=10000000,
                               **kwargs):
   if min_style == 1:
@@ -204,33 +83,17 @@ def run_minimization_while_nl_fn(neigh_fn, force_fn, R_init, shift, min_style,
     nbrs = update_nbrs(state.position, nbrs)
     new_state = apply(state, neighbor=nbrs)
     if nbrs.did_buffer_overflow:
-      print("Rebuilding neighbor_list.")
+#      print("Rebuilding neighbor_list.")
       nbrs = neigh_fn.allocate(state.position)
       nrebuild += 1
     else:
       state = new_state
       steps += 1
-#      print(steps, jnp.amax(jnp.abs(state.force)))
-  
-# steps = 0
-# while cond_fn(state, steps):
-#   print(steps)
-#   nbrs = update_nbrs(state.position, nbrs)
-#   overflow = nbrs.did_buffer_overflow
-#   overflow_nbrs = neigh_fn.allocate(state.position)
-#   new_state = apply(state, neighbor=nbrs)
-#   def infinite_loop():
-#       while True: pass
-#   nbrs = lax.cond(overflow, (), lambda _: overflow_nbrs, (), lambda _: overflow_nbrs)
-#   state = lax.cond(overflow, (), lambda _: state, (), lambda _: new_state)
-#   steps = lax.cond(overflow, steps, lambda x: x, steps, lambda x: x+1)
-#   print(steps, jnp.amax(jnp.abs(state.force)))
 
   num_iterations = steps
   return state.position, jnp.amax(jnp.abs(state.force)), nbrs, num_iterations
 
 def run_minimization_while_nl_overflow_fn(force_fn, nbrs, R_init, shift, min_style,
-                              forced_rebuilding=True,
                               max_grad_thresh=1e-12, max_num_steps=1000000,
                               **kwargs):
   if min_style == 1:
@@ -263,39 +126,6 @@ def run_minimization_while_nl_overflow_fn(force_fn, nbrs, R_init, shift, min_sty
   state, nbrs_final, num_iterations = lax.while_loop(cond_fn, body_fn, (state, nbrs, 0))
   return state.position, jnp.amax(jnp.abs(state.force)), nbrs_final, num_iterations
 
-def run_minimization_while_nl_unsafe_fn(force_fn, nbrs, R_init, shift, min_style,
-                              forced_rebuilding=True,
-                              max_grad_thresh=1e-12, max_num_steps=1000000,
-                              **kwargs):
-  if min_style == 1:
-      init, apply = minimize.fire_descent(jit(force_fn), shift, **kwargs)
-  else:
-      init, apply = modif_fire(jit(force_fn), shift, **kwargs)
-
-  apply = jit(apply)
-
-  state = init(R_init, neighbor=nbrs)
-
-  @jit
-  def get_maxgrad(state):
-     return jnp.amax(jnp.abs(state.force))
- 
-  @jit
-  def cond_fn(val):
-     state, nbrs, i = val
-     cond_min = jnp.logical_and(get_maxgrad(state) > max_grad_thresh, i < max_num_steps)
-     return cond_min
-
-  @jit
-  def body_fn(val):
-     state, nbrs, i = val
-     nbrs = nbrs.update(state.position)
-     state = apply(state, neighbor=nbrs)
-     return state, nbrs, i + 1
-
-  state, nbrs_final, num_iterations = lax.while_loop(cond_fn, body_fn, (state, nbrs, 0))
-  return state.position, jnp.amax(jnp.abs(state.force)), nbrs_final, num_iterations
-
 
 @dataclasses.dataclass
 class ModifFireState:
@@ -305,8 +135,6 @@ class ModifFireState:
     dt: float
     alpha: float
     n_pos: int
-
-
 def modif_fire(energy_or_force_fn, shift_fn,
                dt_start: float = 0.1,
                dt_max: float = 0.4,
