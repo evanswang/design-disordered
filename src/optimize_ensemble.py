@@ -13,7 +13,7 @@ from jaxopt.implicit_diff import custom_root
 
 from minimization import run_minimization_while_nl_overflow_fn
 
-from optimizer_meta_adv import optimize_batch_avegrad
+from optimizer_minibatch import optimize_batch_avegrad
 
 from utils import vector2dsymmat, diameters_to_sigma_matrix, get_psi_k_function
 from utils import load_yaml, merge_dicts
@@ -21,7 +21,7 @@ from utils import load_yaml, merge_dicts
 import energy
 
 import os
-os.environ["XLA_FLAGS"]='--xla_force_host_platform_device_count=2'
+os.environ["XLA_FLAGS"]='--xla_force_host_platform_device_count=8'
 
 f32 = jnp.float32
 f64 = jnp.float64
