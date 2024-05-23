@@ -38,5 +38,5 @@ optimize:
   lr: 1.e-3
   afactor: 0.1
   ltol: 1.e-6
-  ndev: 2
-  mini_batch: 2
+  ndev: 8
+  mini_batch: 8
