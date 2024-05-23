@@ -12,7 +12,7 @@ from jax import jit, lax, vmap, value_and_grad
 from jax_md import util
 
 import os
-os.environ["XLA_FLAGS"]='--xla_force_host_platform_device_count=2'
+os.environ["XLA_FLAGS"]='--xla_force_host_platform_device_count=8' # require 8 cpus to run the code
 
 import optax
 
