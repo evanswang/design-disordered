@@ -1,23 +1,13 @@
 #@title Imports and utility code
 import yaml
-
-import jax.numpy as jnp
-# from jax.config import config
-# config.update('jax_enable_x64', True)
-
-from jax import jit, vmap
-
-from jax_md import space
-
 import chex
-Array = chex.Array
 from typing import Union
 
-Array = chex.Array
-Numeric = Union[Array, int, float]
+import jax.numpy as jnp
+from jax import jit, vmap
+from jax_md import space
 
-f32 = jnp.float32
-f64 = jnp.float64
+
 
 def load_yaml(file_path):
   with open(file_path, 'r') as file:
@@ -41,8 +31,10 @@ def box_at_packing_fraction(sigmas, Ns, phi, dimension):
   :param dimension
   :return: float, box size
   '''
-  sphere_volume_2d = lambda s, n: (jnp.pi / f32(4)) * n * s ** 2
-  sphere_volume_3d = lambda s, n: (jnp.pi / f32(6)) * n * s ** 3
+  from config.settings import settings
+
+  sphere_volume_2d = lambda s, n: (jnp.pi / settings.f32(4)) * n * s ** 2
+  sphere_volume_3d = lambda s, n: (jnp.pi / settings.f32(6)) * n * s ** 3
   if dimension == 2:
     sphere_volume = sphere_volume_2d
   elif dimension == 3:

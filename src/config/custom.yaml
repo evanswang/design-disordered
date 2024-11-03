@@ -1,7 +1,7 @@
 path:
-  input_path: "/Users/mzu/PycharmProjects/jaxmetal/src/disordered_solids/github/Data/optimize_individual_nu0.5.dat"
-  output_path: "/Users/mzu/PycharmProjects/jaxmetal/src/disordered_solids/github/Data/optimize_individual_nu0.5.dat"
-  config_path: "/Users/mzu/PycharmProjects/jaxmetal/src/disordered_solids/github/Data/optimize_individual_nu0.5.con"
+  input_path: "data/optimize_individual_nu0.5.dat"
+  output_path: "data/optimize_individual_nu0.5.dat"
+  config_path: "data/optimize_individual_nu0.5.con"
 
 property:
   target: 0.5

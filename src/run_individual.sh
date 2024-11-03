@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python3 optimize_individual.py
+env JAX_ENABLE_X64=True python3 optimize_individual.py

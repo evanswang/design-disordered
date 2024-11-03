@@ -15,10 +15,11 @@ Package | Version (>=)
 
 The training programms run on single CPU for individual system and multiple CPUs for ensembles, see details in [Individual](#Individual) and [Ensemble](#Ensemble) for more information.
 
-```commandline
+```bash
 pip install -U jax
 git clone https://github.com/jax-md/jax-md.git
 pip install -e jax-md
+export JAX_ENABLE_X64=True
 ```
 
 # Model
