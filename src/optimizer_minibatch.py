@@ -2,9 +2,9 @@ import numpy as onp
 
 import jax
 import jax.numpy as jnp
-from jax.config import config
+# from jax.config import config
 
-config.update('jax_enable_x64', True)  # use double-precision numbers
+# config.update('jax_enable_x64', True)  # use double-precision numbers
 
 from jax import random
 from jax import jit, lax, vmap, value_and_grad

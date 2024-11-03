@@ -2,8 +2,8 @@ import jax.numpy as jnp
 
 from jax import jit
 
-from jax.config import config
-config.update('jax_enable_x64', True)
+# from jax.config import config
+# config.update('jax_enable_x64', True)
 
 f32 = jnp.float32
 f64 = jnp.float64

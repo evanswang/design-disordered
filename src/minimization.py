@@ -10,8 +10,8 @@ simulations and its implementation in lammps". Computational Materials Science V
 """
 
 import jax.numpy as jnp
-from jax.config import config
-config.update('jax_enable_x64', True)
+# from jax.config import config
+# config.update('jax_enable_x64', True)
 
 from jax import jit, lax
 
